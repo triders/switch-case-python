@@ -1,11 +1,10 @@
+import ast, astunparse
 import inspect
+
 
 def switch_to_if(script):
 
 	script = script.replace('    ', '	')
-
-	# if script.startswith('@'):
-	# 	script = script[script.find('\n'):]
 
 	if not script.startswith('\n'):
 		script = '\n' + script
@@ -45,17 +44,11 @@ def switch_to_if(script):
 
 
 def support_switch(func):
+	""" IN PROCESS. NOT WORKING """
 
 	code = inspect.getsource(func)
-	print(code)
-	code = code[code.find('\n')+1:]  # remove @derorator
-	def_part = code[:code.find('\n')]
-
-	print(code)
-	code = code[code.find('\n')+1:]  # remove def part
 	code = code.replace('	switch', 'switch') # kostili
-	print(code)
-
+	code = code[code.find('\n')+1:]  # remove @derorator
 	# code from docstring
 
 	num = 0
@@ -64,19 +57,22 @@ def support_switch(func):
 		code = code[:ind] + '' + code[ind + 1:]
 		num += 1
 
-	def_part = 'def new_func ' + def_part[def_part.find('('):]
-	code = def_part + code
+	new_code = switch_to_if(code)
+	new_code = new_code.replace('\nif', '\n\tif') # kostill
 
-	code = switch_to_if(code)
+	tree = ast.parse(new_code)
+	tree.body[0].name = 'new_func'
 
-	code = code.replace('\nif', '\n\tif') # kostill
 
-	exec(code)
+	# print(ast.dump(tree))
+	# print(astunparse.unparse(tree))
+
+	exec(compile(tree, filename="<ast>", mode="exec"))
 
 	return new_func
 
 
-#@support_switch
+@support_switch
 def my_function_with_switch(a: int, b: int, c: int):
     """
 	switch a:
@@ -86,5 +82,4 @@ def my_function_with_switch(a: int, b: int, c: int):
 			return False
     """
 
-# assert my_function_with_switch(2*2, 4, 5)
-
+assert my_function_with_switch(2*2, 4, 5)
